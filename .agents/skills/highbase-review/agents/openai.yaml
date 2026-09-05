@@ -1,0 +1,4 @@
+interface:
+  display_name: "Highbase: проверка кода"
+  short_description: "Проверка фронтенд-кода по стандартам Highbase"
+  default_prompt: "Используй $highbase-review для проверки фронтенд-изменений и подготовки замечаний."
