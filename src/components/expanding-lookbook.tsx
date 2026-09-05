@@ -3,10 +3,13 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 const desktopMotionQuery =
   "(min-width: 1024px) and (prefers-reduced-motion: no-preference)";
+// Source: https://www.pexels.com/video/close-up-of-barber-cutting-hair-9738001/
+const featuredVideoSource = "/videos/barber-craft.mp4";
+const featuredVideoPoster = "/videos/barber-craft-poster.webp";
 
 function getLookbookTravel() {
   const availableHeight = Math.max(1, window.innerHeight);
@@ -34,6 +37,7 @@ export function ExpandingLookbook({
   }[];
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const featuredVideoRef = useRef<HTMLVideoElement>(null);
   const scheduleRefreshRef = useRef<() => void>(() => undefined);
   const featuredItem = items[0];
   const galleryItems = items.slice(1);
@@ -90,8 +94,8 @@ export function ExpandingLookbook({
         const frame = root.querySelector<HTMLElement>(
           ".lookbook-expansion__frame",
         );
-        const image = root.querySelector<HTMLElement>(
-          ".lookbook-expansion__image",
+        const featuredMedia = root.querySelector<HTMLElement>(
+          ".lookbook-expansion__featured-video",
         );
         const caption = root.querySelector<HTMLElement>(
           ".lookbook-expansion__caption",
@@ -102,7 +106,13 @@ export function ExpandingLookbook({
           ),
         );
 
-        if (!stage || !frame || !image || !caption || scrollSteps.length === 0) {
+        if (
+          !stage ||
+          !frame ||
+          !featuredMedia ||
+          !caption ||
+          scrollSteps.length === 0
+        ) {
           return;
         }
 
@@ -125,7 +135,7 @@ export function ExpandingLookbook({
           "--lookbook-inset-x": "30%",
           "--lookbook-inset-y": "12%",
         });
-        gsap.set(image, { scale: 1.2 });
+        gsap.set(featuredMedia, { scale: 1.2 });
         gsap.set(caption, { autoAlpha: 1, xPercent: 0 });
 
         gsap
@@ -145,7 +155,7 @@ export function ExpandingLookbook({
             duration: 1,
           })
           .to(
-            image,
+            featuredMedia,
             {
               duration: 1,
               scale: 1,
@@ -190,6 +200,59 @@ export function ExpandingLookbook({
     };
   }, [featuredItem]);
 
+  useEffect(() => {
+    const root = rootRef.current;
+    const video = featuredVideoRef.current;
+    const reducedMotionQuery = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    );
+
+    if (!root || !video) {
+      return;
+    }
+
+    let hasAttachedSource = false;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+
+        if (!entry.isIntersecting) {
+          video.pause();
+          return;
+        }
+
+        if (!hasAttachedSource) {
+          hasAttachedSource = true;
+          video.src = featuredVideoSource;
+          video.load();
+        }
+
+        void video.play().catch(() => undefined);
+      },
+      { rootMargin: "100% 0px" },
+    );
+
+    const syncMotionPreference = () => {
+      if (reducedMotionQuery.matches) {
+        observer.unobserve(root);
+        video.pause();
+        return;
+      }
+
+      observer.observe(root);
+    };
+
+    reducedMotionQuery.addEventListener("change", syncMotionPreference);
+    syncMotionPreference();
+
+    return () => {
+      observer.disconnect();
+      reducedMotionQuery.removeEventListener("change", syncMotionPreference);
+      video.pause();
+    };
+  }, [featuredItem]);
+
   if (!featuredItem) {
     return null;
   }
@@ -206,13 +269,16 @@ export function ExpandingLookbook({
             className={`lookbook-expansion__frame lookbook-expansion__frame--${featuredItem.format}`}
           >
             <div className="lookbook-expansion__media">
-              <Image
-                src={featuredItem.image}
-                alt={featuredItem.imageAlt}
-                fill
-                sizes="(orientation: portrait) 150svh, 100vw"
-                className="lookbook-expansion__image"
-                onLoad={refreshScrollTrigger}
+              <video
+                ref={featuredVideoRef}
+                className="lookbook-expansion__featured-video"
+                muted
+                loop
+                playsInline
+                preload="none"
+                poster={featuredVideoPoster}
+                aria-hidden="true"
+                onLoadedMetadata={refreshScrollTrigger}
               />
             </div>
             <figcaption className="lookbook-expansion__caption">
