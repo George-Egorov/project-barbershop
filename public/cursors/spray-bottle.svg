@@ -1,11 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 64 64">
   <defs>
-    <g id="spray-bottle" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 23.5 17 18h11l4 5.5 2 18H10Z" />
-      <path d="M18 18v-5h10v5M25 8h16l3 4-9 3-4 8.5" />
-      <path d="m30 9 5 6M40 13l2 8M14 29l17 9M12.5 34l18 8M17 24l15 8" />
-    </g>
+    <filter id="glow" x="-55%" y="-40%" width="210%" height="185%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="#f2efe8" flood-opacity=".58" />
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#ef4b32" flood-opacity=".34" />
+    </filter>
   </defs>
-  <use href="#spray-bottle" stroke="#0b0b0a" stroke-width="4.4" />
-  <use href="#spray-bottle" stroke="#f05a28" stroke-width="1.8" />
+  <g filter="url(#glow)">
+    <path d="M24 26h21l6 9v23H17V35l7-9Z" fill="#f2efe8" />
+    <path d="M27 17h14v10H27zM24 10h22l7 5-9 5H31l-7-4H14v-6h10Z" fill="#f2efe8" />
+    <path d="m37 18 7 9" fill="none" stroke="#0b0b0a" stroke-linecap="round" stroke-width="3" />
+    <path d="M22 39h24M22 46h24" stroke="#ef4b32" stroke-linecap="round" stroke-width="2.5" />
+    <circle cx="9" cy="11" r="2" fill="#f2efe8" />
+    <circle cx="4" cy="7" r="1.5" fill="#285d9d" />
+  </g>
 </svg>

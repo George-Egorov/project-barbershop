@@ -1,12 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 64 64">
   <defs>
-    <g id="barber-pole" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="14" y="5" width="20" height="38" rx="3.5" />
-      <rect x="10" y="8.5" width="28" height="5" rx="2.5" />
-      <rect x="10" y="34.5" width="28" height="5" rx="2.5" />
-      <path d="m15 14 18 9M15 20l18 9M15 26l17 8.5M18 39l-4-2M34 11.5l-7-3" />
-    </g>
+    <filter id="glow" x="-45%" y="-45%" width="190%" height="190%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="#f2efe8" flood-opacity=".58" />
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#ef4b32" flood-opacity=".34" />
+    </filter>
+    <clipPath id="barrel">
+      <rect x="22" y="14" width="20" height="36" />
+    </clipPath>
   </defs>
-  <use href="#barber-pole" stroke="#0b0b0a" stroke-width="4.4" />
-  <use href="#barber-pole" stroke="#f05a28" stroke-width="1.8" />
+  <g filter="url(#glow)">
+    <rect x="22" y="14" width="20" height="36" fill="#f2efe8" />
+    <g clip-path="url(#barrel)">
+      <path d="M16 26v9L48 8v-9Z" fill="#d7352f" />
+      <path d="M16 44v9l32-27v-9Z" fill="#285d9d" />
+      <path d="M16 62v9l32-27v-9Z" fill="#d7352f" />
+    </g>
+    <path d="M20 7h24a5 5 0 0 1 5 5v2H15v-2a5 5 0 0 1 5-5ZM15 50h34v2a5 5 0 0 1-5 5H20a5 5 0 0 1-5-5v-2Z" fill="#f2efe8" />
+    <path d="M22 7a10 10 0 0 1 20 0H22ZM22 57h20a10 10 0 0 1-20 0Z" fill="#f2efe8" />
+  </g>
 </svg>

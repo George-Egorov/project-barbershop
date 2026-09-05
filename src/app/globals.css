@@ -2687,28 +2687,40 @@ body.is-preloading {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .hero-cinematic,
-  .services-section,
-  .lookbook-section,
-  .atmosphere-scene,
-  .network-map {
-    cursor: default;
+  .hero-cinematic {
+    cursor:
+      url('/cursors/barber-pole.svg') 24 24,
+      crosshair;
   }
 
-  .kinetic-manifesto {
-    cursor: url("/cursors/scissors.svg") 6 42, crosshair;
+  .services-section {
+    cursor:
+      url('/cursors/razor-blade.svg') 24 24,
+      crosshair;
   }
 
-  .barbers-scene {
-    cursor: url("/cursors/clipper.svg") 24 4, crosshair;
+  .lookbook-section {
+    cursor:
+      url('/cursors/scissors.svg') 12 3,
+      crosshair;
   }
 
-  .journal-section {
-    cursor: url("/cursors/comb.svg") 7 38, crosshair;
+  .atmosphere-scene {
+    cursor:
+      url('/cursors/straight-razor.svg') 4 18,
+      crosshair;
   }
 
-  .booking-climax {
-    cursor: url("/cursors/razor-blade.svg") 8 24, crosshair;
+  .network-map__canvas {
+    cursor:
+      url('/cursors/spray-bottle.svg') 7 8,
+      crosshair;
+  }
+
+  .site-footer {
+    cursor:
+      url('/cursors/comb.svg') 14 8,
+      crosshair;
   }
 
   a,
