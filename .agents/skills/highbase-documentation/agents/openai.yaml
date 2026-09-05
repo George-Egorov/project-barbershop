@@ -1,0 +1,4 @@
+interface:
+  display_name: "Highbase: документация"
+  short_description: "Техническая документация проектов Highbase"
+  default_prompt: "Используй $highbase-documentation для создания или обновления документации проекта Highbase."

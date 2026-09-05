@@ -1,0 +1,4 @@
+interface:
+  display_name: "Highbase: фронтенд"
+  short_description: "Фронтенд-разработка по стандартам Highbase"
+  default_prompt: "Используй $highbase-frontend для реализации фронтенд-задачи по стандартам Highbase."

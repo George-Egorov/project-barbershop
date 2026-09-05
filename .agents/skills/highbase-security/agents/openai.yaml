@@ -1,0 +1,4 @@
+interface:
+  display_name: "Highbase: безопасность"
+  short_description: "Базовая проверка безопасности изменений"
+  default_prompt: "Используй $highbase-security для базовой проверки безопасности изменения в проекте Highbase."
