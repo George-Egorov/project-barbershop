@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <g id="spray-bottle" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 23.5 17 18h11l4 5.5 2 18H10Z" />
+      <path d="M18 18v-5h10v5M25 8h16l3 4-9 3-4 8.5" />
+      <path d="m30 9 5 6M40 13l2 8M14 29l17 9M12.5 34l18 8M17 24l15 8" />
+    </g>
+  </defs>
+  <use href="#spray-bottle" stroke="#0b0b0a" stroke-width="4.4" />
+  <use href="#spray-bottle" stroke="#f05a28" stroke-width="1.8" />
+</svg>

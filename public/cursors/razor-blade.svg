@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <g id="razor-blade" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="rotate(-40 24 24)">
+      <path d="M10 13h28c2.2 0 4 1.8 4 4v3c-3.3 0-5 1.4-5 4s1.7 4 5 4v3c0 2.2-1.8 4-4 4H10c-2.2 0-4-1.8-4-4v-3c3.3 0 5-1.4 5-4s-1.7-4-5-4v-3c0-2.2 1.8-4 4-4Z" />
+      <path d="M15 19c2 0 2 3 4 3s2-3 4-3 2 3 4 3 2-3 4-3 2 3 4 3v4c-2 0-2 3-4 3s-2-3-4-3-2 3-4 3-2-3-4-3-2 3-4 3Z" />
+    </g>
+  </defs>
+  <use href="#razor-blade" stroke="#0b0b0a" stroke-width="4.4" />
+  <use href="#razor-blade" stroke="#f05a28" stroke-width="1.8" />
+</svg>

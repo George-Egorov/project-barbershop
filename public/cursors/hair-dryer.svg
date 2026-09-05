@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <g id="hair-dryer" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 11c5-3 10-4 17-4h13l7 5v12l-7 5H21l-10-4-6-4Z" />
+      <path d="M5 11v10l6 4V9M35 7c2 6 2 15 0 22M38 10h4M38 15h4M38 20h4M38 25h2" />
+      <path d="m23 29-3 14h8l3-14M20.7 39h8" />
+      <circle cx="31" cy="34" r="1.7" />
+      <path d="M22 43v3M15 13h8M18 17h8" />
+    </g>
+  </defs>
+  <use href="#hair-dryer" stroke="#0b0b0a" stroke-width="4.4" />
+  <use href="#hair-dryer" stroke="#f05a28" stroke-width="1.8" />
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <g id="barber-pole" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="14" y="5" width="20" height="38" rx="3.5" />
+      <rect x="10" y="8.5" width="28" height="5" rx="2.5" />
+      <rect x="10" y="34.5" width="28" height="5" rx="2.5" />
+      <path d="m15 14 18 9M15 20l18 9M15 26l17 8.5M18 39l-4-2M34 11.5l-7-3" />
+    </g>
+  </defs>
+  <use href="#barber-pole" stroke="#0b0b0a" stroke-width="4.4" />
+  <use href="#barber-pole" stroke="#f05a28" stroke-width="1.8" />
+</svg>
