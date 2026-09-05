@@ -6,10 +6,9 @@ import { useLayoutEffect, useRef } from "react";
 
 const desktopMotionQuery =
   "(min-width: 1024px) and (prefers-reduced-motion: no-preference)";
-const desktopHeaderOffset = 72;
 
 function getManifestoTravel(wordCount: number) {
-  const availableHeight = Math.max(1, window.innerHeight - desktopHeaderOffset);
+  const availableHeight = Math.max(1, window.innerHeight);
   const heightDrivenBeat = availableHeight * 0.92;
   const widthDrivenBeat = Math.min(window.innerWidth * 0.46, availableHeight * 1.2);
   const beatTravel = Math.max(heightDrivenBeat, widthDrivenBeat);
@@ -71,8 +70,10 @@ export function KineticManifesto({
         const stage = root.querySelector<HTMLElement>(
           ".kinetic-manifesto__stage",
         );
-        const wordElements = Array.from(
-          root.querySelectorAll<HTMLElement>(".kinetic-manifesto__word"),
+        const wordTextElements = Array.from(
+          root.querySelectorAll<HTMLElement>(
+            ".kinetic-manifesto__word-text",
+          ),
         );
         const scrollSteps = Array.from(
           root.querySelectorAll<HTMLElement>(
@@ -83,34 +84,42 @@ export function KineticManifesto({
           ".kinetic-manifesto__statement",
         );
 
-        if (!stage || wordElements.length === 0 || scrollSteps.length === 0) {
+        if (
+          !stage ||
+          wordTextElements.length === 0 ||
+          scrollSteps.length === 0
+        ) {
           return;
         }
 
         updateDesktopLayout = () => {
-          const travel = getManifestoTravel(wordElements.length);
+          const travel = getManifestoTravel(wordTextElements.length);
           const stepHeight = Math.ceil(travel / scrollSteps.length);
 
           gsap.set(stage, {
-            height: `${Math.max(1, window.innerHeight - desktopHeaderOffset)}px`,
+            height: `${Math.max(1, window.innerHeight)}px`,
             minHeight: 0,
-            top: desktopHeaderOffset,
+            top: 0,
           });
           gsap.set(scrollSteps, { height: stepHeight });
         };
 
         updateDesktopLayout();
 
-        gsap.set(wordElements, {
+        const getWordTravel = () =>
+          Math.max(160, Math.round(stage.clientHeight * 0.34));
+
+        gsap.set(wordTextElements, {
           opacity: 0,
           scale: 0.68,
           transformOrigin: "50% 50%",
-          yPercent: 84,
+          y: getWordTravel,
+          yPercent: 0,
         });
-        gsap.set(wordElements[0], {
+        gsap.set(wordTextElements[0], {
           opacity: 1,
           scale: 0.78,
-          yPercent: 0,
+          y: 0,
         });
 
         if (statementElement) {
@@ -124,20 +133,20 @@ export function KineticManifesto({
           defaults: { ease: "none" },
           scrollTrigger: {
             trigger: root,
-            start: `top top+=${desktopHeaderOffset}`,
-            end: () => `+=${getManifestoTravel(wordElements.length)}`,
+            start: "top top",
+            end: () => `+=${getManifestoTravel(wordTextElements.length)}`,
             scrub: 0.8,
             invalidateOnRefresh: true,
           },
         });
 
-        timeline.to(wordElements[0], {
+        timeline.to(wordTextElements[0], {
           duration: 0.95,
           scale: 1.08,
         });
 
-        wordElements.slice(1).forEach((wordElement, index) => {
-          const previousWord = wordElements[index];
+        wordTextElements.slice(1).forEach((wordElement, index) => {
+          const previousWord = wordTextElements[index];
           const transitionStart = (index + 1) * 1.75;
 
           timeline
@@ -147,7 +156,7 @@ export function KineticManifesto({
                 opacity: 0,
                 duration: 0.72,
                 scale: 1.34,
-                yPercent: -84,
+                y: () => -getWordTravel(),
               },
               transitionStart,
             )
@@ -156,13 +165,14 @@ export function KineticManifesto({
               {
                 opacity: 0,
                 scale: 0.68,
-                yPercent: 84,
+                y: () => getWordTravel(),
+                yPercent: 0,
               },
               {
                 opacity: 1,
                 duration: 0.72,
                 scale: 0.92,
-                yPercent: 0,
+                y: 0,
               },
               transitionStart + 0.04,
             )
@@ -176,10 +186,10 @@ export function KineticManifesto({
             );
         });
 
-        const finalWordStart = (wordElements.length - 1) * 1.75;
+        const finalWordStart = (wordTextElements.length - 1) * 1.75;
 
         timeline.to(
-          wordElements.at(-1)!,
+          wordTextElements.at(-1)!,
           {
             duration: 0.85,
             scale: 1.16,
@@ -243,7 +253,7 @@ export function KineticManifesto({
               key={`${word}-${index}`}
               className="kinetic-manifesto__word"
             >
-              {word}
+              <span className="kinetic-manifesto__word-text">{word}</span>
             </span>
           ))}
         </h2>

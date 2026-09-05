@@ -7,10 +7,9 @@ import { useLayoutEffect, useRef } from "react";
 
 const desktopMotionQuery =
   "(min-width: 1024px) and (prefers-reduced-motion: no-preference)";
-const desktopHeaderOffset = 72;
 
 function getLookbookTravel() {
-  const availableHeight = Math.max(1, window.innerHeight - desktopHeaderOffset);
+  const availableHeight = Math.max(1, window.innerHeight);
 
   return Math.round(
     Math.max(availableHeight * 1.85, window.innerWidth * 1.05),
@@ -112,10 +111,10 @@ export function ExpandingLookbook({
           const stepHeight = Math.ceil(travel / scrollSteps.length);
 
           gsap.set(stage, {
-            height: `${Math.max(1, window.innerHeight - desktopHeaderOffset)}px`,
+            height: `${Math.max(1, window.innerHeight)}px`,
             minHeight: 0,
-            position: "relative",
-            top: "auto",
+            position: "sticky",
+            top: 0,
           });
           gsap.set(scrollSteps, { height: stepHeight });
         };
@@ -134,12 +133,9 @@ export function ExpandingLookbook({
             defaults: { ease: "none" },
             scrollTrigger: {
               trigger: chapter,
-              start: `top top+=${desktopHeaderOffset}`,
+              start: "top top",
               end: () => `+=${getLookbookTravel()}`,
-              pin: stage,
-              pinSpacing: false,
               scrub: 0.9,
-              anticipatePin: 1,
               invalidateOnRefresh: true,
             },
           })

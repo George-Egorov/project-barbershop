@@ -114,10 +114,18 @@ function HydratedSitePreloader({ identity }: HydratedSitePreloaderProps) {
           className="site-preloader__logo"
         />
 
-        <div className="site-preloader__skeleton" aria-hidden="true">
-          <span className="site-preloader__skeleton-line site-preloader__skeleton-line--wide" />
-          <span className="site-preloader__skeleton-line" />
-          <span className="site-preloader__skeleton-line site-preloader__skeleton-line--short" />
+        <div className="site-preloader__loading-scene" aria-hidden="true">
+          <div className="site-preloader__skeleton">
+            <span className="site-preloader__skeleton-line site-preloader__skeleton-line--wide" />
+            <span className="site-preloader__skeleton-line" />
+            <span className="site-preloader__skeleton-line site-preloader__skeleton-line--short" />
+          </div>
+
+          <span className="site-preloader__barber-pole">
+            <span className="site-preloader__barber-pole-cap" />
+            <span className="site-preloader__barber-pole-barrel" />
+            <span className="site-preloader__barber-pole-cap" />
+          </span>
         </div>
 
         <div className="site-preloader__footer">

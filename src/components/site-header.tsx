@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CloseIcon, MenuIcon } from "@/components/icons";
 import { SiteBrand } from "@/components/site-brand";
 import type { SiteIdentity } from "@/data/content";
 
@@ -22,14 +21,17 @@ export function SiteHeader({
   bookingUrl,
 }: SiteHeaderProps) {
   const headerRef = useRef<HTMLElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const firstMenuLinkRef = useRef<HTMLAnchorElement>(null);
   const keepHeaderVisibleUntilRef = useRef(0);
   const anchorTargetPositionRef = useRef<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isMenuClosing, setIsMenuClosing] = useState(false);
   const [isCompact, setIsCompact] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   const [activeHref, setActiveHref] = useState("#top");
+  const isMenuLayerActive = isOpen || isMenuClosing;
 
   useEffect(() => {
     let lastScrollPosition = window.scrollY;
@@ -42,8 +44,11 @@ export function SiteHeader({
       const currentScrollPosition = window.scrollY;
       const isMovingDown = currentScrollPosition > lastScrollPosition + 4;
       const isMovingUp = currentScrollPosition < lastScrollPosition - 4;
-      const headerHasFocus =
-        headerRef.current?.contains(document.activeElement) ?? false;
+      const focusedElement = document.activeElement;
+      const headerHasKeyboardFocus =
+        focusedElement instanceof HTMLElement &&
+        (headerRef.current?.contains(focusedElement) ?? false) &&
+        focusedElement.matches(":focus-visible");
       const isAnchorTransitionActive =
         performance.now() < keepHeaderVisibleUntilRef.current;
       const anchorTargetPosition = anchorTargetPositionRef.current;
@@ -59,8 +64,8 @@ export function SiteHeader({
       if (
         reducedMotionQuery.matches ||
         currentScrollPosition < 140 ||
-        isOpen ||
-        headerHasFocus ||
+        isMenuLayerActive ||
+        headerHasKeyboardFocus ||
         isAnchorTransitionActive ||
         isAlignedToAnchor
       ) {
@@ -87,7 +92,7 @@ export function SiteHeader({
       window.removeEventListener("scroll", handleScroll);
       if (frameId) window.cancelAnimationFrame(frameId);
     };
-  }, [isOpen]);
+  }, [isMenuLayerActive]);
 
   useEffect(() => {
     const sectionElements = [
@@ -206,7 +211,10 @@ export function SiteHeader({
   useEffect(() => {
     const desktopQuery = window.matchMedia("(min-width: 1024px)");
     const closeMenuOnDesktop = () => {
-      if (desktopQuery.matches) setIsOpen(false);
+      if (!desktopQuery.matches) return;
+
+      setIsOpen(false);
+      setIsMenuClosing(false);
     };
 
     desktopQuery.addEventListener("change", closeMenuOnDesktop);
@@ -216,7 +224,7 @@ export function SiteHeader({
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "";
+    document.body.style.overflow = isMenuLayerActive ? "hidden" : "";
     const pageContent = [
       document.querySelector<HTMLElement>("main"),
       document.querySelector<HTMLElement>("footer"),
@@ -224,13 +232,9 @@ export function SiteHeader({
     ].filter((element): element is HTMLElement => Boolean(element));
 
     for (const element of pageContent) {
-      element.inert = isOpen;
-      if (isOpen) element.setAttribute("aria-hidden", "true");
+      element.inert = isMenuLayerActive;
+      if (isMenuLayerActive) element.setAttribute("aria-hidden", "true");
       else element.removeAttribute("aria-hidden");
-    }
-
-    if (isOpen) {
-      window.requestAnimationFrame(() => firstMenuLinkRef.current?.focus());
     }
 
     const handleMenuKeyboard = (event: KeyboardEvent) => {
@@ -238,32 +242,40 @@ export function SiteHeader({
 
       if (event.key === "Escape") {
         setIsOpen(false);
+        setIsMenuClosing(true);
         menuButtonRef.current?.focus();
         return;
       }
 
       if (event.key !== "Tab") return;
 
-      const focusableElements = Array.from(
-        headerRef.current?.querySelectorAll<HTMLElement>(
-          'a[href]:not([tabindex="-1"]), button:not([disabled])',
-        ) ?? [],
-      ).filter((element) => element.getClientRects().length > 0);
+      const focusableSelector =
+        'a[href]:not([tabindex="-1"]), button:not([disabled])';
+      const focusableElements = [headerRef.current, menuRef.current]
+        .flatMap((element) =>
+          Array.from(
+            element?.querySelectorAll<HTMLElement>(focusableSelector) ?? [],
+          ),
+        )
+        .filter((element) => element.getClientRects().length > 0);
       const firstElement = focusableElements[0];
       const lastElement = focusableElements.at(-1);
       if (!firstElement || !lastElement) return;
+      const focusScopeContainsActiveElement =
+        (headerRef.current?.contains(document.activeElement) ?? false) ||
+        (menuRef.current?.contains(document.activeElement) ?? false);
 
       if (
         event.shiftKey &&
         (document.activeElement === firstElement ||
-          !headerRef.current?.contains(document.activeElement))
+          !focusScopeContainsActiveElement)
       ) {
         event.preventDefault();
         lastElement.focus();
       } else if (
         !event.shiftKey &&
         (document.activeElement === lastElement ||
-          !headerRef.current?.contains(document.activeElement))
+          !focusScopeContainsActiveElement)
       ) {
         event.preventDefault();
         firstElement.focus();
@@ -280,108 +292,139 @@ export function SiteHeader({
         element.removeAttribute("aria-hidden");
       }
     };
-  }, [isOpen]);
+  }, [isMenuLayerActive, isOpen]);
 
   const headerClassName = [
     "site-header",
     isCompact ? "site-header--compact" : "",
     isHidden ? "site-header--hidden" : "",
-    isOpen ? "site-header--menu-open" : "",
+    isMenuLayerActive ? "site-header--menu-open" : "",
+    isOpen ? "site-header--menu-expanded" : "",
   ]
     .filter(Boolean)
     .join(" ");
   const bookingHref = bookingUrl ?? "#booking";
 
+  const handleMenuToggle = () => {
+    if (isOpen) {
+      setIsOpen(false);
+      setIsMenuClosing(true);
+      return;
+    }
+
+    setIsMenuClosing(false);
+    setIsOpen(true);
+  };
+
+  const handleMenuClose = () => {
+    setIsOpen(false);
+    setIsMenuClosing(true);
+  };
+
   return (
-    <header ref={headerRef} className={headerClassName}>
-      <div className="site-header__inner page-shell">
-        <a
-          href="#top"
-          className="site-header__brand"
-          aria-label={`${identity.name ?? identity.descriptor} / наверх`}
-        >
-          <SiteBrand
-            identity={identity}
-            priority
-            className="site-header__logo"
-          />
-        </a>
-
-        <nav className="site-header__navigation" aria-label="Основная навигация">
-          {navigation.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              aria-current={activeHref === item.href ? "location" : undefined}
-              className={`site-header__nav-link ${
-                activeHref === item.href ? "site-header__nav-link--active" : ""
-              }`}
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-
-        <div className="site-header__actions">
+    <>
+      <header ref={headerRef} className={headerClassName}>
+        <div className="site-header__inner page-shell">
           <a
-            href={bookingHref}
-            target={bookingUrl ? "_blank" : undefined}
-            rel={bookingUrl ? "noreferrer" : undefined}
-            aria-hidden={isOpen}
-            tabIndex={isOpen ? -1 : undefined}
-            className="site-header__booking"
+            href="#top"
+            className="site-header__brand"
+            aria-label={`${identity.name ?? identity.descriptor} / наверх`}
           >
-            Записаться
+            <SiteBrand
+              identity={identity}
+              priority
+              className="site-header__logo"
+            />
           </a>
-          <button
-            ref={menuButtonRef}
-            type="button"
-            aria-label={isOpen ? "Закрыть меню" : "Открыть меню"}
-            aria-expanded={isOpen}
-            aria-controls="mobile-menu"
-            onClick={() => setIsOpen((currentValue) => !currentValue)}
-            className="site-header__menu-button"
-          >
-            {isOpen ? <CloseIcon /> : <MenuIcon />}
-          </button>
-        </div>
-      </div>
 
-      {isOpen ? (
-        <div
-          id="mobile-menu"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Меню сайта"
-          className="mobile-menu"
-        >
-          <div className="mobile-menu__inner page-shell">
-            <nav aria-label="Мобильная навигация" className="mobile-menu__navigation">
-              {navigation.map((item, index) => (
-                <a
-                  key={item.href}
-                  ref={index === 0 ? firstMenuLinkRef : undefined}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className="mobile-menu__link"
-                >
-                  <span className="mobile-menu__index">0{index + 1}</span>
-                  <span>{item.label}</span>
-                </a>
-              ))}
-            </nav>
+          <nav className="site-header__navigation" aria-label="Основная навигация">
+            {navigation.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                aria-current={activeHref === item.href ? "location" : undefined}
+                className={`site-header__nav-link ${
+                  activeHref === item.href ? "site-header__nav-link--active" : ""
+                }`}
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="site-header__actions">
             <a
               href={bookingHref}
               target={bookingUrl ? "_blank" : undefined}
               rel={bookingUrl ? "noreferrer" : undefined}
-              onClick={() => setIsOpen(false)}
-              className="button-primary mobile-menu__booking"
+              aria-hidden={isMenuLayerActive}
+              tabIndex={isMenuLayerActive ? -1 : undefined}
+              className="site-header__booking"
             >
-              {bookingUrl ? "Открыть онлайн-запись" : "Перейти к записи"}
+              Записаться
             </a>
+            <button
+              ref={menuButtonRef}
+              type="button"
+              aria-label={isOpen ? "Закрыть меню" : "Открыть меню"}
+              aria-expanded={isOpen}
+              aria-controls="mobile-menu"
+              onClick={handleMenuToggle}
+              className="site-header__menu-button"
+            >
+              <span className="site-header__menu-icon" aria-hidden="true" />
+            </button>
           </div>
         </div>
-      ) : null}
-    </header>
+      </header>
+
+      <div
+        ref={menuRef}
+        id="mobile-menu"
+        role="dialog"
+        aria-modal={isOpen ? "true" : undefined}
+        aria-hidden={!isOpen}
+        aria-label="Меню сайта"
+        inert={!isOpen}
+        onTransitionEnd={(event) => {
+          if (
+            event.target !== event.currentTarget ||
+            event.propertyName !== "transform"
+          ) return;
+
+          if (isOpen) firstMenuLinkRef.current?.focus({ preventScroll: true });
+          else setIsMenuClosing(false);
+        }}
+        className={`mobile-menu ${isOpen ? "mobile-menu--open" : ""}`}
+      >
+        <div className="mobile-menu__inner page-shell">
+          <nav aria-label="Мобильная навигация" className="mobile-menu__navigation">
+            {navigation.map((item, index) => (
+              <a
+                key={item.href}
+                ref={index === 0 ? firstMenuLinkRef : undefined}
+                href={item.href}
+                onClick={handleMenuClose}
+                className="mobile-menu__link"
+              >
+                <span className="mobile-menu__index">0{index + 1}</span>
+                <span>{item.label}</span>
+              </a>
+            ))}
+          </nav>
+          <a
+            href={bookingHref}
+            target={bookingUrl ? "_blank" : undefined}
+            rel={bookingUrl ? "noreferrer" : undefined}
+            onClick={handleMenuClose}
+            className="button-primary mobile-menu__booking"
+          >
+            <span className="button-primary__label">
+              {bookingUrl ? "Открыть онлайн-запись" : "Перейти к записи"}
+            </span>
+          </a>
+        </div>
+      </div>
+    </>
   );
 }

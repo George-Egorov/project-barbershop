@@ -1,7 +1,5 @@
 "use client";
 
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
 import { useLayoutEffect, useRef } from "react";
 import { ArrowRightIcon } from "@/components/icons";
@@ -19,6 +17,22 @@ type BarbersSectionProps = {
 };
 
 const cardCompositions = ["portrait", "landscape", "closeup"] as const;
+const desktopMotionQuery =
+  "(min-width: 1024px) and (prefers-reduced-motion: no-preference)";
+
+function clampProgress(value: number) {
+  return Math.min(1, Math.max(0, value));
+}
+
+function smootherStep(value: number) {
+  const progress = clampProgress(value);
+
+  return progress ** 3 * (progress * (progress * 6 - 15) + 10);
+}
+
+function getEdgeRunway(viewportHeight: number) {
+  return Math.min(544, Math.max(240, viewportHeight * 0.48));
+}
 
 export function BarbersSection({ team }: BarbersSectionProps) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -34,135 +48,221 @@ export function BarbersSection({ team }: BarbersSectionProps) {
     const stage = stageRef.current;
     const viewport = viewportRef.current;
     const track = trackRef.current;
+    const progressFill = progressFillRef.current;
+    const progressText = progressTextRef.current;
 
     if (!stage || !viewport || !track) return;
 
-    gsap.registerPlugin(ScrollTrigger);
-
     let disposed = false;
-    let refreshFrame: number | null = null;
+    let measureFrame: number | null = null;
+    let desktopProgressFrame: number | null = null;
     let nativeProgressFrame: number | null = null;
+    let desktopTravel = 0;
+    let desktopScrollTravel = 0;
+    let isDesktopMotionEnabled = false;
 
     const updateProgress = (value: number) => {
-      const progress = Math.min(1, Math.max(0, value));
-      const progressFill = progressFillRef.current;
-      const progressText = progressTextRef.current;
+      const progress = clampProgress(value);
 
       if (progressFill) {
-        gsap.set(progressFill, { scaleX: progress });
+        progressFill.style.transform = `scaleX(${progress.toFixed(5)})`;
       }
 
       if (progressText) {
         const activeIndex = team.length > 1 ? Math.round(progress * (team.length - 1)) : 0;
         const activeLabel = team[activeIndex]?.index ?? firstIndex;
-        progressText.textContent = `${activeLabel} / ${totalLabel}`;
+        const nextLabel = `${activeLabel} / ${totalLabel}`;
+
+        if (progressText.textContent !== nextLabel) {
+          progressText.textContent = nextLabel;
+        }
       }
     };
 
-    const scheduleRefresh = () => {
-      if (disposed || refreshFrame !== null) return;
+    const renderDesktopProgress = () => {
+      desktopProgressFrame = null;
 
-      refreshFrame = window.requestAnimationFrame(() => {
-        refreshFrame = null;
-        if (!disposed) ScrollTrigger.refresh();
-      });
+      if (disposed || !isDesktopMotionEnabled) return;
+
+      const stageTop = stage.getBoundingClientRect().top;
+      const rawProgress =
+        desktopScrollTravel > 0
+          ? clampProgress(-stageTop / desktopScrollTravel)
+          : 0;
+      const progress = smootherStep(rawProgress);
+      const offset = -desktopTravel * progress;
+
+      track.style.transform = `translate3d(${offset.toFixed(3)}px, 0, 0)`;
+      updateProgress(progress);
     };
 
-    const updateNativeProgress = () => {
+    const scheduleDesktopProgress = () => {
+      if (
+        disposed ||
+        !isDesktopMotionEnabled ||
+        desktopProgressFrame !== null
+      ) {
+        return;
+      }
+
+      desktopProgressFrame = window.requestAnimationFrame(
+        renderDesktopProgress,
+      );
+    };
+
+    const measureDesktopLayout = () => {
+      measureFrame = null;
+
+      if (disposed || !isDesktopMotionEnabled) return;
+
+      desktopTravel = Math.max(0, track.scrollWidth - viewport.clientWidth);
+
+      const viewportHeight = Math.max(1, window.innerHeight);
+      const edgeRunway = getEdgeRunway(viewportHeight);
+      desktopScrollTravel = desktopTravel + edgeRunway * 2;
+      const nextViewportHeight = `${viewportHeight}px`;
+      const nextStageHeight = `${viewportHeight + desktopScrollTravel}px`;
+
+      if (viewport.style.height !== nextViewportHeight) {
+        viewport.style.height = nextViewportHeight;
+      }
+
+      if (stage.style.height !== nextStageHeight) {
+        stage.style.height = nextStageHeight;
+      }
+
+      renderDesktopProgress();
+    };
+
+    const scheduleMeasure = () => {
+      if (
+        disposed ||
+        !isDesktopMotionEnabled ||
+        measureFrame !== null
+      ) {
+        return;
+      }
+
+      measureFrame = window.requestAnimationFrame(measureDesktopLayout);
+    };
+
+    const renderNativeProgress = () => {
       nativeProgressFrame = null;
+
+      if (disposed || isDesktopMotionEnabled) return;
+
       const travel = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
       updateProgress(travel > 0 ? viewport.scrollLeft / travel : 0);
     };
 
-    const handleNativeScroll = () => {
-      if (nativeProgressFrame !== null) return;
-      nativeProgressFrame = window.requestAnimationFrame(updateNativeProgress);
+    const scheduleNativeProgress = () => {
+      if (
+        disposed ||
+        isDesktopMotionEnabled ||
+        nativeProgressFrame !== null
+      ) {
+        return;
+      }
+
+      nativeProgressFrame = window.requestAnimationFrame(renderNativeProgress);
     };
 
-    viewport.addEventListener("scroll", handleNativeScroll, { passive: true });
-    window.addEventListener("resize", scheduleRefresh, { passive: true });
-    window.addEventListener("load", scheduleRefresh);
+    const handleLayoutChange = () => {
+      if (isDesktopMotionEnabled) scheduleMeasure();
+      else scheduleNativeProgress();
+    };
+
+    const clearDesktopLayout = () => {
+      desktopTravel = 0;
+      desktopScrollTravel = 0;
+      stage.style.removeProperty("height");
+      viewport.style.removeProperty("height");
+      track.style.removeProperty("transform");
+    };
+
+    const desktopMotion = window.matchMedia(desktopMotionQuery);
+
+    const syncMotionMode = () => {
+      const shouldEnableDesktopMotion = desktopMotion.matches;
+
+      if (shouldEnableDesktopMotion === isDesktopMotionEnabled) {
+        handleLayoutChange();
+        return;
+      }
+
+      isDesktopMotionEnabled = shouldEnableDesktopMotion;
+
+      if (isDesktopMotionEnabled) {
+        viewport.scrollLeft = 0;
+        measureDesktopLayout();
+      } else {
+        clearDesktopLayout();
+        scheduleNativeProgress();
+      }
+    };
+
+    viewport.addEventListener("scroll", scheduleNativeProgress, {
+      passive: true,
+    });
+    window.addEventListener("scroll", scheduleDesktopProgress, {
+      passive: true,
+    });
+    window.addEventListener("resize", handleLayoutChange, { passive: true });
+    window.addEventListener("orientationchange", handleLayoutChange);
+    window.addEventListener("load", handleLayoutChange);
+    window.visualViewport?.addEventListener("resize", handleLayoutChange, {
+      passive: true,
+    });
+    desktopMotion.addEventListener("change", syncMotionMode);
 
     const pendingImages = Array.from(track.querySelectorAll("img")).filter(
       (image) => !image.complete,
     );
 
     pendingImages.forEach((image) => {
-      image.addEventListener("load", scheduleRefresh);
-      image.addEventListener("error", scheduleRefresh);
+      image.addEventListener("load", handleLayoutChange);
+      image.addEventListener("error", handleLayoutChange);
     });
 
     const resizeObserver =
-      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(scheduleRefresh);
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(handleLayoutChange);
 
     resizeObserver?.observe(viewport);
     resizeObserver?.observe(track);
 
     if ("fonts" in document) {
-      void document.fonts.ready.then(scheduleRefresh);
+      void document.fonts.ready.then(handleLayoutChange);
     }
 
-    const desktopMotion = gsap.matchMedia();
-
-    desktopMotion.add(
-      "(min-width: 1024px) and (prefers-reduced-motion: no-preference)",
-      () => {
-        const getTravel = () => Math.max(0, track.scrollWidth - viewport.clientWidth);
-
-        viewport.scrollLeft = 0;
-        updateProgress(0);
-
-        if (getTravel() === 0) return;
-
-        const horizontalTween = gsap.to(track, {
-          x: () => -getTravel(),
-          ease: "none",
-          force3D: true,
-          overwrite: "auto",
-          scrollTrigger: {
-            trigger: stage,
-            start: "top top",
-            end: () => `+=${getTravel()}`,
-            pin: stage,
-            pinSpacing: true,
-            scrub: true,
-            anticipatePin: 1,
-            invalidateOnRefresh: true,
-            onRefresh: (self) => updateProgress(self.progress),
-            onUpdate: (self) => updateProgress(self.progress),
-          },
-        });
-
-        scheduleRefresh();
-
-        return () => {
-          horizontalTween.scrollTrigger?.kill();
-          horizontalTween.kill();
-          gsap.set(track, { clearProps: "transform" });
-          viewport.scrollLeft = 0;
-          updateProgress(0);
-        };
-      },
-    );
-
     updateProgress(0);
-    scheduleRefresh();
+    syncMotionMode();
 
     return () => {
       disposed = true;
-      desktopMotion.revert();
+      desktopMotion.removeEventListener("change", syncMotionMode);
       resizeObserver?.disconnect();
-      viewport.removeEventListener("scroll", handleNativeScroll);
-      window.removeEventListener("resize", scheduleRefresh);
-      window.removeEventListener("load", scheduleRefresh);
+      viewport.removeEventListener("scroll", scheduleNativeProgress);
+      window.removeEventListener("scroll", scheduleDesktopProgress);
+      window.removeEventListener("resize", handleLayoutChange);
+      window.removeEventListener("orientationchange", handleLayoutChange);
+      window.removeEventListener("load", handleLayoutChange);
+      window.visualViewport?.removeEventListener("resize", handleLayoutChange);
 
       pendingImages.forEach((image) => {
-        image.removeEventListener("load", scheduleRefresh);
-        image.removeEventListener("error", scheduleRefresh);
+        image.removeEventListener("load", handleLayoutChange);
+        image.removeEventListener("error", handleLayoutChange);
       });
 
-      if (refreshFrame !== null) window.cancelAnimationFrame(refreshFrame);
+      if (measureFrame !== null) window.cancelAnimationFrame(measureFrame);
+      if (desktopProgressFrame !== null) {
+        window.cancelAnimationFrame(desktopProgressFrame);
+      }
       if (nativeProgressFrame !== null) window.cancelAnimationFrame(nativeProgressFrame);
+
+      clearDesktopLayout();
+      progressFill?.style.removeProperty("transform");
     };
   }, [firstIndex, team, totalLabel]);
 
